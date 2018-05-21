@@ -1,0 +1,57 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>GP Stats</title>
+	{% load static %}
+	<link rel="stylesheet" type="text/css" href="{% static 'motogp/style.css' %}"/>
+</head>
+<body>
+	<nav>
+		<ul>
+			<li><a href="{% url 'motogp:index' %}">Home</a></li>
+			<li><a href="{% url 'motogp:seasons' %}">Seasons</a>
+			  <ul>
+			  {% for season, events in menu_data.season_data.items %}
+				  <li><a href="{% url 'motogp:season' season %}">{{ season }}</a>
+				    <ul>
+					  {% for event, classes in events.items %}
+						  <li><a href="{% url 'motogp:event' season event %}">{{ event }}</a>
+						    <!--<ul>-->
+								<!--{% for class in classes.items %}-->
+								  <!--<li>{{class}}</li>-->
+								<!--{% endfor %}-->
+							  <!--</ul>-->
+              </li>
+					  {% endfor %}
+					  </ul>
+					</li>
+			  {% endfor %}
+				</ul>
+			</li>
+			<li><a href="{% url 'motogp:events' %}">Events</a>
+			  <ul>
+			  {% for track, seasons in menu_data.event_data.items %}
+				  <li><a href="{% url 'motogp:track' track %}">{{ track }}</a>
+				    <ul>
+					  {% for season, classes in seasons.items %}
+						  <li><a href="{% url 'motogp:event' season track %}">{{ season }}</a>
+						    <!--<ul>-->
+								<!--{% for class in classes.items %}-->
+								  <!--<li>{{class}}</li>-->
+								<!--{% endfor %}-->
+							  <!--</ul>-->
+              </li>
+					  {% endfor %}
+					  </ul>
+					</li>
+			  {% endfor %}
+				</ul>
+			</li>
+		</ul>
+	</nav>
+<br>
+{% block content %}
+{% endblock %}
+</body>

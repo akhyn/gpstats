@@ -1,0 +1,15 @@
+{% extends 'motogp/index.html' %}
+{% load static %}
+{% block content %}
+
+<h1>{{ season.year }}</h1>
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<script type="text/javascript" src="http://kozea.github.com/pygal.js/latest/pygal-tooltips.min.js"></script>
+{% for chart in charts %}
+    <object type="image/svg+xml" data="{% static chart %}">
+          Your browser does not support SVG
+    </object>
+{% endfor %}
+{% endblock %}

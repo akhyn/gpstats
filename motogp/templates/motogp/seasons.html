@@ -1,0 +1,10 @@
+{% extends 'motogp/index.html' %}
+{% load static %}
+{% block content %}
+<br>
+<section id="listbody">
+{% for season, _ in menu_data.season_data.items %}
+<li><a href="{% url 'motogp:season' season %}">{{ season }}</a></li>
+{% endfor %}
+</section>
+{% endblock %}

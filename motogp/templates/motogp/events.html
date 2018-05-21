@@ -1,0 +1,10 @@
+{% extends 'motogp/index.html' %}
+{% load static %}
+{% block content %}
+<br>
+<section id="listbody">
+{% for track, _ in menu_data.event_data.items %}
+  <li><a href="{% url 'motogp:track' track %}">{{ track }}</a></li>
+{% endfor %}
+</section>
+{% endblock %}
