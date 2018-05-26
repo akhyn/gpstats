@@ -1,7 +1,7 @@
 GP Stats is a light and clean data visualization site for motorcycle racing data with automated parsing of new results
 and generation of snazzy charts.
-![Chart 1](/docs/screen1.jpg)
-![Chart 2](/docs/screen2.jpg)
+![Chart 1](/docs/screen1.png)
+![Chart 2](/docs/screen2.png)
 ### Setup
 GP Stats requires a Jango 2.0 capable host
 
