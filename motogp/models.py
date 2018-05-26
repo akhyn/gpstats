@@ -28,9 +28,6 @@ class Season(models.Model):
     year = models.IntegerField()
     categories = models.ManyToManyField(Category)
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
     def create_season_chart(self):
         modern_points = {
             1: 25,
@@ -90,6 +87,7 @@ class Season(models.Model):
 
                 counts[cat] += 1
 
+                # Re-order by latest position for display reasons
                 title = results[cat].pop('title')
                 columns = results[cat].pop('columns')
                 new_order = OrderedDict(reversed(sorted(results[cat].items(), key=lambda x: x[-1])))
@@ -138,9 +136,6 @@ class Event(models.Model):
     season = models.ForeignKey(Season, on_delete=models.CASCADE)
     event_location = models.ForeignKey(EventLocation, on_delete=models.CASCADE)
     categories = models.ManyToManyField(Category)
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
 
     def create_event_history_chart(self, season_count=5):
         results = {}

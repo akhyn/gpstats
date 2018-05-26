@@ -2,8 +2,11 @@ import requests
 import time
 import re
 
+from collections import OrderedDict
+
 from bs4 import BeautifulSoup
 from django.utils import timezone
+from django.conf import settings
 
 from .models import Season, Result, Category, Brand, Team, Session, EventLocation, UpdateData, Rider
 
@@ -17,7 +20,7 @@ def rate_limit(delayed_func, delay=1):
 
 
 @rate_limit
-def get_options(source_url, tag):
+def get_options(source_url, tag, only_accept_after=None):
     page = requests.get(source_url)
     s = BeautifulSoup(page.text, 'html.parser')
 
@@ -31,7 +34,23 @@ def get_options(source_url, tag):
                 pass
     except AttributeError:
         pass
-    return {option: [] for option in options}
+    if only_accept_after is not None:
+        # reject everything prior to parameter
+        candidate_options = OrderedDict()
+        for option in options:
+            candidate_options[option] = []
+        valid_options = OrderedDict()
+        start_accepting = False
+        for opt in candidate_options:
+            if not start_accepting:
+                if opt == only_accept_after:
+                    start_accepting = True
+            else:
+                valid_options[opt] = []
+        return valid_options
+    else:
+        # Accept all values
+        return {option: [] for option in options}
 
 
 @rate_limit
@@ -96,53 +115,60 @@ def results_line_count(source, to_skip=None):
     return count - skip_count
 
 
-def scrape_data(start_season=None, start_event=None):
-    banned_events = ['T22',]
+def scrape_data(start_season=None):
+    banned_events = ['T22', ]
     update_data, created = UpdateData.objects.get_or_create()
     if start_season is None:
         start_season = update_data.most_recent_scraped_season
+        start_event = update_data.most_recent_scraped_event
+    else:
+        start_event = None
     seasons = [str(item) for item in list(range(start_season, timezone.now().year + 1))]
     base_page = 'http://www.motogp.com/en/Results+Statistics/'
     for season in seasons:
-        print(season)
-        events = get_options(base_page + season, 'event')
-        if start_event is not None and start_event in events:
-            events = events[events.index(event):]  # Events are already sorted
+        if settings.DEBUG:
+            print(f'\n{season}')
+        events = get_options(base_page + season, 'event', only_accept_after=start_event)
         for event in events:
             if event in banned_events:
                 continue
-            print(event)
+            if settings.DEBUG:
+                print(f'{season}: {event}')
             categories = get_options(base_page + season + '/' + event, 'category')
+            if len(categories) > 0:
+                update_data.most_recent_scraped_event = event
+                update_data.save(update_fields=['most_recent_scraped_event'])
 
             for category in categories:
-                print(category)
+                if settings.DEBUG:
+                    print(f'{season}: {event}: {category}')
                 sessions = get_options(base_page + season + '/' + event + '/' + category, 'session')
 
                 for session in sessions:
                     results = get_results_from(base_page + season + '/' + event + '/' + category + '/' + session)
                     insert_in_database(season, event, category, session, results)
-            update_data.most_recent_scraped_event = event
-            update_data.save(update_fields=['most_recent_scraped_event'])
         update_data.most_recent_scraped_season = season
         update_data.save(update_fields=['most_recent_scraped_season'])
 
 
-def chart_data(start_year=None, start_event=None):
+def chart_data(start_year=None):
     update_data, created = UpdateData.objects.get_or_create()
     if start_year is None:
         start_year = update_data.most_recent_charted_season
-    if start_event is None:
         start_event = update_data.most_recent_charted_event
         try:
             loc = EventLocation.objects.get(location=start_event)
         except EventLocation.DoesNotExist:
             loc = None
+    else:
+        loc = None
 
     years = list(range(start_year, timezone.now().year + 1))
     for year in years:
         try:
             s = Season.objects.get(year=year)
-            print(year)
+            if settings.DEBUG:
+                print(year)
         except Season.DoesNotExist:
             return
         events_temp = s.event_set.all()
@@ -177,7 +203,7 @@ def insert_in_database(season, event, category, session, results):
     is_point_event = session in ('RAC', 'RAC2')
 
     # RAC2 or WUP2 mean restarted sessions, find old one and remove
-    if session =='RAC2':
+    if session == 'RAC2':
         try:
             s = Session.objects.get(point_event=is_point_event,
                                     category=cat,
@@ -193,7 +219,6 @@ def insert_in_database(season, event, category, session, results):
             print('Previous session should exist!', session)
             return
         session = 'RAC'
-        session = session[:-1]
     if session == 'WUP2':
         try:
             s = Session.objects.get(point_event=is_point_event,
@@ -244,7 +269,8 @@ def insert_in_database(season, event, category, session, results):
             try:
                 rider_last = re.search('\ [A-ZÓÑØÜÄÖÉÚÁÉ(Mc)]([A-ZÓÜÑØÄÖÉÚÁÉ(Mc)(Jr)\'\-\ ])*.?$', rider).group(0)
             except:
-                print(f'rider_last Error!: s={season}, e={event}, c={category}, sesh={session}, r={rider}\n{row}\n')
+                if settings.DEBUG:
+                    print(f'rider_last Error!: s={season}, e={event}, c={category}, sesh={session}, r={rider}\n{row}\n')
                 continue
             rider_last = rider_last.strip().lower()
             rider_first = rider[:rider.find(rider_last)].strip().lower()
