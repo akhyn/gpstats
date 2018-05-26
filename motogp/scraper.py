@@ -127,7 +127,7 @@ def scrape_data(start_season=None):
     base_page = 'http://www.motogp.com/en/Results+Statistics/'
     for season in seasons:
         if settings.DEBUG:
-            print(f'\n{season}')
+            print(f'\nParsing season: {season}')
         events = get_options(base_page + season, 'event', only_accept_after=start_event)
         for event in events:
             if event in banned_events:
@@ -168,7 +168,7 @@ def chart_data(start_year=None):
         try:
             s = Season.objects.get(year=year)
             if settings.DEBUG:
-                print(year)
+                print(f'Charting season: {year}')
         except Season.DoesNotExist:
             return
         events_temp = s.event_set.all()

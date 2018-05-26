@@ -90,10 +90,14 @@ class Season(models.Model):
                 # Re-order by latest position for display reasons
                 title = results[cat].pop('title')
                 columns = results[cat].pop('columns')
-                new_order = OrderedDict(reversed(sorted(results[cat].items(), key=lambda x: x[-1])))
-                new_order['title'] = title
-                new_order['columns'] = columns
-                results[cat] = new_order
+                # results are: (rider, [result1, result2]). This sorts by latest result
+                new_order = sorted(results[cat].items(), key=lambda x: x[-1][-1], reverse=True)
+                new_results = OrderedDict()
+                for rider, scores in new_order:
+                    new_results[rider] = scores
+                new_results['title'] = title
+                new_results['columns'] = columns
+                results[cat] = new_results
 
         # Save in static files
         for category in results:
