@@ -1,4 +1,4 @@
 beautifulsoup4==4.6.0
 Django==2.0.4
 pygal==2.4.0
-requests==2.18.4
+requests==2.9.1

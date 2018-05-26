@@ -324,7 +324,8 @@ class Session(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        MenuOptions.objects.get_or_create()  # Force update
+        m, c = MenuOptions.objects.get_or_create()  # Force update
+        m.save()
 
 
 class Result(models.Model):

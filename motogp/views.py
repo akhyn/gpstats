@@ -46,9 +46,9 @@ def events_view(request):
     return render(request, 'motogp/events.html', {**menu_context()})
 
 
-def populate(request):
-    scrape_data()
-    return HttpResponseRedirect(reverse('motogp:index'))
+# def populate(request):
+#     scrape_data()
+#     return HttpResponseRedirect(reverse('motogp:index'))
 
 
 def menu_context():

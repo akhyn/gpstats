@@ -104,15 +104,18 @@ def scrape_data(start_season=None, start_event=None):
     seasons = [str(item) for item in list(range(start_season, timezone.now().year + 1))]
     base_page = 'http://www.motogp.com/en/Results+Statistics/'
     for season in seasons:
+        print(season)
         events = get_options(base_page + season, 'event')
         if start_event is not None and start_event in events:
             events = events[events.index(event):]  # Events are already sorted
         for event in events:
             if event in banned_events:
                 continue
+            print(event)
             categories = get_options(base_page + season + '/' + event, 'category')
 
             for category in categories:
+                print(category)
                 sessions = get_options(base_page + season + '/' + event + '/' + category, 'session')
 
                 for session in sessions:
