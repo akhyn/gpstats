@@ -2,6 +2,7 @@ li a {
     color: red;
     background: black;
 }
+
 body {
     background: white;
     font: 20px arial, helvetica, sans-serif;
@@ -33,7 +34,6 @@ body {
     line-height: 30px;
     z-index: 1;
 }
-
 
 ul {
     padding: 0;
