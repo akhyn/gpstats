@@ -12,6 +12,16 @@ from .models import Season, Result, Category, Brand, Team, Session, EventLocatio
 
 
 def rate_limit(delayed_func, delay=1):
+    """
+    Delay function call
+
+    Simple decorator to delay a function call
+
+    :param delayed_func: The function to delay
+    :param delay: Delay in seconds (default = 1)
+
+    :return: Closure call for the delayed function
+    """
     def wrapper(*args, **kwargs):
         time.sleep(delay)
         return delayed_func(*args, **kwargs)
@@ -21,6 +31,14 @@ def rate_limit(delayed_func, delay=1):
 
 @rate_limit
 def get_options(source_url, tag, only_accept_after=None):
+    """
+    Parse a BS4 tag on a page for the available menu options.
+
+    :param source_url: The url we wish to parse.
+    :param tag: The current BS4 tag we are looking at.
+    :param only_accept_after: Used if we wish to discard options before this point (previously parsed)
+    :return: Dictionary-compatible object containing the options. Format: {option1: [], opption2: []}
+    """
     page = requests.get(source_url)
     s = BeautifulSoup(page.text, 'html.parser')
 
@@ -55,6 +73,13 @@ def get_options(source_url, tag, only_accept_after=None):
 
 @rate_limit
 def get_results_from(source_url):
+    """
+    Parse and organize results from a page.
+
+    :param source_url: The actual page containing the data
+
+    :return: The parsed data in the format: ([source_url], [event_info], [results1], [results2],..)
+    """
     unwanted_items = ['Not Classified', 'Fastest Lap: ', 'Circuit Record Lap: ', 'Best Lap:', 'Pole Lap: ',
                       'Not Finished 1st Lap', 'Not Starting', 'Excluded', ]
     attempts = 5
@@ -103,6 +128,14 @@ def get_results_from(source_url):
 
 
 def results_line_count(source, to_skip=None):
+    """
+    Return the number of results contained in a page
+
+    :param source: The source text
+    :param to_skip:  The text found in result tables that is not a result
+
+    :return: Number of results
+    """
     if to_skip is None:
         to_skip = []
     start = source.find('<tbody>')
@@ -116,15 +149,25 @@ def results_line_count(source, to_skip=None):
 
 
 def scrape_data(start_season=None):
+    """
+    Scrape a data source for all the relevant data.
+
+    Iterate through seasons, events, categories to gather the menu options available, then calls get_results_from to
+    gather results and insert_in_database to store then.
+
+    :param start_season: The first season to begin parsing with. (default = last season parsed)
+    """
+    base_page = 'http://www.motogp.com/en/Results+Statistics/'
     banned_events = ['T22', ]
+
     update_data, created = UpdateData.objects.get_or_create()
     if start_season is None:
         start_season = update_data.most_recent_scraped_season
         start_event = update_data.most_recent_scraped_event
     else:
         start_event = None
+
     seasons = [str(item) for item in list(range(start_season, timezone.now().year + 1))]
-    base_page = 'http://www.motogp.com/en/Results+Statistics/'
     for season in seasons:
         if settings.DEBUG:
             print(f'\nParsing season: {season}')
@@ -152,6 +195,11 @@ def scrape_data(start_season=None):
 
 
 def chart_data(start_year=None):
+    """
+    Iterate through all the seasons and events to create their data charts.
+
+    :param start_year: First year to start charting. (default = last year charted)
+    """
     update_data, created = UpdateData.objects.get_or_create()
     if start_year is None:
         start_year = update_data.most_recent_charted_season
@@ -193,6 +241,15 @@ def chart_data(start_year=None):
 
 
 def insert_in_database(season, event, category, session, results):
+    """
+    Insert a set of results in the proper database objects
+
+    :param season: Source season
+    :param event: Source event
+    :param category: Source category
+    :param session: Source session
+    :param results: Set of results
+    """
     # Get or create DB references for session
     y, created = Season.objects.get_or_create(year=int(season))
     event_loc, created = EventLocation.objects.get_or_create(location=event)
@@ -202,37 +259,33 @@ def insert_in_database(season, event, category, session, results):
     e.categories.add(cat)
     is_point_event = session in ('RAC', 'RAC2')
 
-    # RAC2 or WUP2 mean restarted sessions, find old one and remove
+    # RAC2 or WUP2 mean restarted sessions, find any old one and remove
     if session == 'RAC2':
         try:
-            s = Session.objects.get(point_event=is_point_event,
-                                    category=cat,
-                                    event=e,
-                                    session_type='RAC',
-                                    )
-            try:
-                Result.objects.filter(session=s).delete()
-            except Result.DoesNotExist:
-                pass
-            s.delete()
+            sessions = Session.objects.filter(point_event=is_point_event,
+                                              category=cat,
+                                              event=e,
+                                              session_type='RAC',
+                                              )
+            for s in sessions:
+                s.delete()
         except Session.DoesNotExist:
-            print('Previous session should exist!', session)
+            if settings.DEBUG:
+                print('Previous session should exist!', session)
             return
         session = 'RAC'
     if session == 'WUP2':
         try:
-            s = Session.objects.get(point_event=is_point_event,
-                                    category=cat,
-                                    event=e,
-                                    session_type='WUP',
-                                    )
-            try:
-                Result.objects.filter(session=s).delete()
-            except Result.DoesNotExist:
-                pass
-            s.delete()
+            sessions = Session.objects.filter(point_event=is_point_event,
+                                              category=cat,
+                                              event=e,
+                                              session_type='WUP',
+                                              )
+            for s in sessions:
+                s.delete()
         except Session.DoesNotExist:
-            print('Previous session should exist!', session)
+            if settings.DEBUG:
+                print('Previous session should exist!', session)
             return
         session = 'WUP'
 

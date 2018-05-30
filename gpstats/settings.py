@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'ioannzw3#m+ta^!gba^d5s-qwrvf06!8$f*qrode1e4av@y%6!'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['motogp-dev.33awt8kjy7.us-east-2.elasticbeanstalk.com', '127.0.0.1', 'localhost', ]
 

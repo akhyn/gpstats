@@ -13,5 +13,4 @@ urlpatterns = [
     path('season/<int:year>/', views.season_view, name='season'),
     path('track/<str:track>', views.track_view, name='track'),
     path('event/<int:season>/<str:event_name>/', views.event_view, name='event'),
-    # path('update_all/', views.populate, name='populate')
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
